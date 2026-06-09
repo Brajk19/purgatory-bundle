@@ -43,6 +43,10 @@ final class ConfigurationLoader implements ConfigurationLoaderInterface
                 if ($subscription->if instanceof \Closure) {
                     $config['if'] = serialize($subscription->if);
                     $config['closureIf'] = true;
+
+                    if (null !== $subscription->closurePropertyPath) {
+                        $config['closureProperty'] = $subscription->closurePropertyPath;
+                    }
                 } else {
                     $config['if'] = (string) $subscription->if;
                 }

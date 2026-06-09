@@ -4,25 +4,13 @@ declare(strict_types=1);
 
 namespace Sofascore\PurgatoryBundle\RouteProvider;
 
-use Psr\Container\ContainerInterface;
+use Doctrine\ORM\PersistentCollection;
 use Sofascore\PurgatoryBundle\Attribute\RouteParamValue\PropertyValues;
-use Sofascore\PurgatoryBundle\Cache\Configuration\ConfigurationLoaderInterface;
 use Sofascore\PurgatoryBundle\Listener\Enum\Action;
-use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
-use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\PropertyAccess\PropertyPath;
 
 final class UpdatedEntityRouteProvider extends AbstractEntityRouteProvider
 {
-    public function __construct(
-        ConfigurationLoaderInterface $configurationLoader,
-        ?ExpressionLanguage $expressionLanguage,
-        ContainerInterface $routeParamValueResolverLocator,
-        private readonly PropertyAccessorInterface $propertyAccessor,
-    ) {
-        parent::__construct($configurationLoader, $expressionLanguage, $routeParamValueResolverLocator);
-    }
-
     public function supports(Action $action, object $entity): bool
     {
         return Action::Update === $action;
