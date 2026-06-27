@@ -14,6 +14,7 @@ use Sofascore\PurgatoryBundle\Exception\LogicException;
 use Sofascore\PurgatoryBundle\Listener\Enum\Action;
 use Sofascore\PurgatoryBundle\RouteParamValueResolver\ValuesResolverInterface;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
+use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
 /**
  * @internal
@@ -35,6 +36,7 @@ abstract class AbstractEntityRouteProvider implements RouteProviderInterface
         private readonly ConfigurationLoaderInterface $configurationLoader,
         private readonly ?ExpressionLanguage $expressionLanguage,
         private readonly ContainerInterface $routeParamValueResolverLocator,
+        protected readonly PropertyAccessorInterface $propertyAccessor,
     ) {
     }
 
@@ -78,8 +80,21 @@ abstract class AbstractEntityRouteProvider implements RouteProviderInterface
                     /** @var \Closure $closure */
                     $closure = deepclone_from_array($subscription['if']);
 
-                    /** @var bool $result */
-                    $result = $closure($entity);
+                    if (isset($subscription['closureProperty'])) {
+                        // inverse subscription: navigate from the changed entity back to the entity
+                        // the closure expects; a null relation means there is nothing to purge
+                        $related = $this->propertyAccessor->getValue($entity, $subscription['closureProperty']);
+
+                        if (null === $related) {
+                            continue;
+                        }
+
+                        /** @var bool $result */
+                        $result = $closure($related);
+                    } else {
+                        /** @var bool $result */
+                        $result = $closure($entity);
+                    }
                 } else {
                     $result = $this->getExpressionLanguage()->evaluate($subscription['if'], ['obj' => $entity]);
 

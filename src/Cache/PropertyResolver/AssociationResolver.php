@@ -72,13 +72,16 @@ final class AssociationResolver implements SubscriptionResolverInterface
                 ?? $values;
         }
 
+        $closurePropertyPath = null;
+
         if (null !== $if = $routeMetadata->purgeOn->if) {
             if ($if instanceof \Closure) {
-                // TODO support closures
-                throw new \RuntimeException('Cannot create inverse subscription with closures');
+                // The closure expects the original entity, but the inverse subscription fires on the
+                // associated entity. Carry the inverse field so it can be navigated back at runtime.
+                $closurePropertyPath = $associationTarget;
+            } else {
+                $if = $this->expressionTransformer->transform($if, $associationClass, $associationTarget, 'false');
             }
-
-            $if = $this->expressionTransformer->transform($if, $associationClass, $associationTarget, 'false');
         }
 
         yield new PurgeSubscription(
@@ -89,6 +92,7 @@ final class AssociationResolver implements SubscriptionResolverInterface
             route: $routeMetadata->route,
             actions: $routeMetadata->purgeOn->actions,
             if: $if,
+            closurePropertyPath: $closurePropertyPath,
         );
 
         return true;

@@ -249,6 +249,7 @@ final class DebugCommand extends Command
      *     routeName: string,
      *     routeParams?: array<string, array{type: string, values: list<mixed>, optional?: true}>,
      *     if?: string|array<mixed>,
+     *     closureProperty?: string,
      *     actions?: non-empty-list<Action>,
      * }>> $configuration
      */

@@ -11,6 +11,7 @@ use Sofascore\PurgatoryBundle\Listener\Enum\Action;
  *     routeName: string,
  *     routeParams?: array<string, array{type: string, values: list<mixed>, optional?: true}>,
  *     if?: string|array<mixed>,
+ *     closureProperty?: string,
  *     actions?: non-empty-list<Action>,
  * }>
  */
@@ -22,6 +23,7 @@ final class Subscriptions implements \IteratorAggregate, \Countable
      *     routeName: string,
      *     routeParams?: array<string, array{type: string, values: list<mixed>, optional?: true}>,
      *     if?: string|array<mixed>,
+     *     closureProperty?: string,
      *     actions?: non-empty-list<Action>,
      * }> $subscriptions
      */
