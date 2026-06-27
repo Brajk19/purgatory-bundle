@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Sofascore\PurgatoryBundle\Tests\Cache\Configuration;
 
-use Opis\Closure\ReflectionClosure;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\Attributes\RequiresMethod;
+use PHPUnit\Framework\Attributes\RequiresPhp;
 use PHPUnit\Framework\TestCase;
 use Sofascore\PurgatoryBundle\Attribute\RouteParamValue\CompoundValues;
 use Sofascore\PurgatoryBundle\Attribute\RouteParamValue\EnumValues;
@@ -18,6 +17,7 @@ use Sofascore\PurgatoryBundle\Cache\Configuration\ConfigurationLoader;
 use Sofascore\PurgatoryBundle\Cache\Subscription\PurgeSubscription;
 use Sofascore\PurgatoryBundle\Cache\Subscription\PurgeSubscriptionProviderInterface;
 use Sofascore\PurgatoryBundle\Listener\Enum\Action;
+use Sofascore\PurgatoryBundle\Tests\Fixtures\ClosureIfHolder;
 use Sofascore\PurgatoryBundle\Tests\Fixtures\DummyStringEnum;
 use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\Routing\Route;
@@ -231,25 +231,13 @@ final class ConfigurationLoaderTest extends TestCase
         ];
     }
 
-    #[RequiresMethod(ReflectionClosure::class, '__construct')]
-    #[DataProvider('purgeSubscriptionProviderPhp85')]
-    public function testSubscriptionsWithPhp85Features(array $purgeSubscriptions, array $expectedConfiguration): void
+    #[RequiresPhp('>= 8.5.0')]
+    public function testSubscriptionsWithClosureIf(): void
     {
         $purgeSubscriptionProvider = $this->createMock(PurgeSubscriptionProviderInterface::class);
         $purgeSubscriptionProvider->expects(self::once())
             ->method('provide')
-            ->willReturn($purgeSubscriptions);
-
-        $loader = new ConfigurationLoader($purgeSubscriptionProvider);
-
-        self::assertInstanceOf(Configuration::class, $configuration = $loader->load());
-        self::assertSame($expectedConfiguration, $configuration->toArray());
-    }
-
-    public static function purgeSubscriptionProviderPhp85(): iterable
-    {
-        yield 'purge subscription without property' => [
-            'purgeSubscriptions' => [
+            ->willReturn([
                 new PurgeSubscription(
                     class: \stdClass::class,
                     property: null,
@@ -257,19 +245,21 @@ final class ConfigurationLoaderTest extends TestCase
                     routeName: 'app_route_foo',
                     route: new Route('/foo'),
                     actions: Action::cases(),
-                    if: static function (\stdClass $entity): bool {return true; },
+                    if: ClosureIfHolder::RETURNS_TRUE,
                 ),
-            ],
-            'expectedConfiguration' => [
-                'stdClass' => [
-                    [
-                        'routeName' => 'app_route_foo',
-                        'if' => 'O:16:"Opis\Closure\Box":2:{i:0;i:1;i:1;a:1:{s:4:"info";a:4:{s:3:"key";s:32:"b2037a8181118b374eef46daefe3a977";s:6:"header";s:62:"namespace Sofascore\PurgatoryBundle\Tests\Cache\Configuration;";s:4:"body";s:57:"static function (\stdClass $entity): bool {return true; }";s:5:"flags";i:2;}}}',
-                        'closureIf' => true,
-                        'actions' => Action::cases(),
-                    ],
+            ]);
+
+        $loader = new ConfigurationLoader($purgeSubscriptionProvider);
+
+        self::assertInstanceOf(Configuration::class, $configuration = $loader->load());
+        self::assertSame([
+            'stdClass' => [
+                [
+                    'routeName' => 'app_route_foo',
+                    'if' => deepclone_to_array(ClosureIfHolder::RETURNS_TRUE),
+                    'actions' => Action::cases(),
                 ],
             ],
-        ];
+        ], $configuration->toArray());
     }
 }

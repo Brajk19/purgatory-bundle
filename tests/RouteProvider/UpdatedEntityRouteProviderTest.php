@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Sofascore\PurgatoryBundle\Tests\RouteProvider;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\ORM\PersistentCollection;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\RequiresFunction;
+use PHPUnit\Framework\Attributes\RequiresPhp;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -26,6 +30,7 @@ use Sofascore\PurgatoryBundle\RouteProvider\AbstractEntityRouteProvider;
 use Sofascore\PurgatoryBundle\RouteProvider\PropertyAccess\PurgatoryPropertyAccessor;
 use Sofascore\PurgatoryBundle\RouteProvider\PurgeRoute;
 use Sofascore\PurgatoryBundle\RouteProvider\UpdatedEntityRouteProvider;
+use Sofascore\PurgatoryBundle\Tests\Fixtures\ClosureIfHolder;
 use Sofascore\PurgatoryBundle\Tests\Fixtures\DummyStringEnum;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
@@ -232,6 +237,51 @@ final class UpdatedEntityRouteProviderTest extends TestCase
         self::assertSame(['name' => 'association_route', 'params' => ['param1' => 5]], (array) $routes[4]);
     }
 
+    public function testOldValuesFromDereferencedCollectionAreSkipped(): void
+    {
+        $routeProvider = $this->createRouteProvider([
+            'stdClass::pets' => [
+                [
+                    'routeName' => 'pets_route',
+                    'routeParams' => [
+                        'param1' => [
+                            'type' => PropertyValues::type(),
+                            'values' => ['pets[*].id'],
+                        ],
+                    ],
+                ],
+            ],
+        ], false);
+
+        $newPet = new \stdClass();
+        $newPet->id = 3;
+
+        $entity = new \stdClass();
+        $entity->pets = new ArrayCollection([$newPet]);
+
+        $oldPet1 = new \stdClass();
+        $oldPet1->id = 1;
+        $oldPet2 = new \stdClass();
+        $oldPet2->id = 2;
+
+        $routes = [...$routeProvider->provideRoutesFor(
+            action: Action::Update,
+            entity: $entity,
+            entityChangeSet: [
+                'pets' => new PersistentCollection(
+                    self::createStub(EntityManagerInterface::class),
+                    new ClassMetadata(\stdClass::class),
+                    new ArrayCollection([$oldPet1, $oldPet2]),
+                ),
+            ],
+        )];
+
+        self::assertCount(1, $routes);
+        self::assertContainsOnlyInstancesOf(PurgeRoute::class, $routes);
+
+        self::assertSame(['name' => 'pets_route', 'params' => ['param1' => 3]], (array) $routes[0]);
+    }
+
     public function testProvideRoutesToPurgeWithArrayAccess(): void
     {
         $routeProvider = $this->createRouteProvider([
@@ -400,29 +450,20 @@ final class UpdatedEntityRouteProviderTest extends TestCase
         [...$routeProvider->provideRoutesFor(Action::Update, new \stdClass(), [])];
     }
 
-    #[RequiresFunction('\Opis\Closure\serialize')]
+    #[RequiresPhp('>= 8.5.0')]
     public function testProvideRoutesToPurgeWithClosureIf(): void
     {
-        $validIf = static function (\stdClass $entity): bool {
-            return true;
-        };
-        $invalidIf = static function (\stdClass $entity): bool {
-            return false;
-        };
-
         $routeProvider = $this->createRouteProvider([
             'stdClass' => [
                 [
                     'routeName' => 'foo_route',
-                    'if' => \Opis\Closure\serialize($validIf),
-                    'closureIf' => true,
+                    'if' => deepclone_to_array(ClosureIfHolder::RETURNS_TRUE),
                 ],
             ],
             'stdClass::foo' => [
                 [
                     'routeName' => 'bar_route',
-                    'if' => \Opis\Closure\serialize($validIf),
-                    'closureIf' => true,
+                    'if' => deepclone_to_array(ClosureIfHolder::RETURNS_TRUE),
                 ],
                 [
                     'routeName' => 'baz_route',
@@ -436,8 +477,7 @@ final class UpdatedEntityRouteProviderTest extends TestCase
                             'values' => ['baz'],
                         ],
                     ],
-                    'if' => \Opis\Closure\serialize($invalidIf),
-                    'closureIf' => true,
+                    'if' => deepclone_to_array(ClosureIfHolder::RETURNS_FALSE),
                 ],
             ],
         ], false);

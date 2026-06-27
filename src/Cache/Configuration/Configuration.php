@@ -12,8 +12,7 @@ final class Configuration implements \Countable
      * @param array<non-empty-string, list<array{
      *     routeName: string,
      *     routeParams?: array<string, array{type: string, values: list<mixed>, optional?: true}>,
-     *     if?: string,
-     *     closureIf?: true,
+     *     if?: string|array<mixed>,
      *     closureProperty?: string,
      *     actions?: non-empty-list<Action>,
      * }>> $configuration
@@ -58,8 +57,7 @@ final class Configuration implements \Countable
      * @return array<non-empty-string, list<array{
      *     routeName: string,
      *     routeParams?: array<string, array{type: string, values: list<mixed>, optional?: true}>,
-     *     if?: string,
-     *     closureIf?: true,
+     *     if?: string|array<mixed>,
      *     closureProperty?: string,
      *     actions?: non-empty-list<Action>,
      * }>>

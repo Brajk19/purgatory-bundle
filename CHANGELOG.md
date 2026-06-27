@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   in https://github.com/sofascore/purgatory-bundle/pull/112
 - Ability to pass a static method callable as a `DynamicValues` provider by @HypeMC
   in https://github.com/sofascore/purgatory-bundle/pull/137
+- Ability to use a closure as the `PurgeOn` `if` condition on PHP 8.5+ by @Brajk19
+  in https://github.com/sofascore/purgatory-bundle/pull/116
 
 ### Changed
 
@@ -32,6 +34,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   in https://github.com/sofascore/purgatory-bundle/pull/123
 - `ValuesInterface::getValues()`, use public properties instead by @Brajk19
   in https://github.com/sofascore/purgatory-bundle/pull/130
+
+## [1.3.2] - 2026-06-10
+
+### Fixed
+
+- Fix purge route generation when Doctrine change sets contain a `PersistentCollection` by @Brajk19
+  in https://github.com/sofascore/purgatory-bundle/pull/144
+
+## [1.3.1] - 2026-06-08
+
+### Fixed
+
+- Fix nullsafe operator usage with collection property accessors by @Brajk19
+  in https://github.com/sofascore/purgatory-bundle/pull/140
 
 ## [1.3.0] - 2025-12-15
 
@@ -77,6 +93,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial release
 
 [2.0.0]: https://github.com/sofascore/purgatory-bundle/compare/v1.3.0...v2.0.0
+[1.3.2]: https://github.com/sofascore/purgatory-bundle/compare/v1.3.1...v1.3.2
+[1.3.1]: https://github.com/sofascore/purgatory-bundle/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/sofascore/purgatory-bundle/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/sofascore/purgatory-bundle/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/sofascore/purgatory-bundle/compare/v1.1.1...v1.2.0

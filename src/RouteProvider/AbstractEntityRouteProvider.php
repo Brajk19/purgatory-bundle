@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sofascore\PurgatoryBundle\RouteProvider;
 
-use Opis\Closure\Box;
+use Doctrine\ORM\PersistentCollection;
 use Psr\Container\ContainerInterface;
 use Sofascore\PurgatoryBundle\Cache\Configuration\Configuration;
 use Sofascore\PurgatoryBundle\Cache\Configuration\ConfigurationLoaderInterface;
@@ -16,8 +16,6 @@ use Sofascore\PurgatoryBundle\RouteParamValueResolver\ValuesResolverInterface;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
-use function Opis\Closure\unserialize;
-
 /**
  * @internal
  *
@@ -26,7 +24,7 @@ use function Opis\Closure\unserialize;
 abstract class AbstractEntityRouteProvider implements RouteProviderInterface
 {
     /**
-     * @param array<string, array{mixed, mixed}> $entityChangeSet
+     * @param array<string, array{mixed, mixed}|PersistentCollection<array-key, object>> $entityChangeSet
      *
      * @return array<int, string>
      */
@@ -66,7 +64,7 @@ abstract class AbstractEntityRouteProvider implements RouteProviderInterface
     }
 
     /**
-     * @param array<string, array{mixed, mixed}> $entityChangeSet
+     * @param array<string, array{mixed, mixed}|PersistentCollection<array-key, object>> $entityChangeSet
      *
      * @return iterable<int, PurgeRoute>
      */
@@ -78,9 +76,9 @@ abstract class AbstractEntityRouteProvider implements RouteProviderInterface
             }
 
             if (isset($subscription['if'])) {
-                if (isset($subscription['closureIf'])) {
+                if (\is_array($subscription['if'])) {
                     /** @var \Closure $closure */
-                    $closure = unserialize($subscription['if'], options: ['allowed_classes' => [Box::class]]);
+                    $closure = deepclone_from_array($subscription['if']);
 
                     if (isset($subscription['closureProperty'])) {
                         // inverse subscription: navigate from the changed entity back to the entity
@@ -91,16 +89,18 @@ abstract class AbstractEntityRouteProvider implements RouteProviderInterface
                             continue;
                         }
 
+                        /** @var bool $result */
                         $result = $closure($related);
                     } else {
+                        /** @var bool $result */
                         $result = $closure($entity);
                     }
                 } else {
                     $result = $this->getExpressionLanguage()->evaluate($subscription['if'], ['obj' => $entity]);
-                }
 
-                if (!\is_bool($result)) {
-                    throw new InvalidIfExpressionResultException($subscription['routeName'], $subscription['if'], $result);
+                    if (!\is_bool($result)) {
+                        throw new InvalidIfExpressionResultException($subscription['routeName'], $subscription['if'], $result);
+                    }
                 }
 
                 if (!$result) {
@@ -138,9 +138,9 @@ abstract class AbstractEntityRouteProvider implements RouteProviderInterface
     }
 
     /**
-     * @param array<string, list<?scalar>>                                             $routeParamValues
-     * @param array<string, array{type: string, values: list<mixed>, optional?: true}> $routeParamConfigs
-     * @param array<string, array{mixed, mixed}>                                       $entityChangeSet
+     * @param array<string, list<?scalar>>                                               $routeParamValues
+     * @param array<string, array{type: string, values: list<mixed>, optional?: true}>   $routeParamConfigs
+     * @param array<string, array{mixed, mixed}|PersistentCollection<array-key, object>> $entityChangeSet
      *
      * @return list<array<string, ?scalar>>
      */

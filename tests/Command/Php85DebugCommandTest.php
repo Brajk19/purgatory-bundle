@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sofascore\PurgatoryBundle\Tests\Command;
 
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\RequiresFunction;
 use PHPUnit\Framework\Attributes\RequiresPhp;
 use Sofascore\PurgatoryBundle\Command\DebugCommand;
 use Sofascore\PurgatoryBundle\Tests\Functional\AbstractKernelTestCase;
@@ -14,7 +13,6 @@ use Symfony\Component\Console\Tester\CommandTester;
 
 #[CoversClass(DebugCommand::class)]
 #[RequiresPhp('>= 8.5.0')]
-#[RequiresFunction('\Opis\Closure\serialize')]
 final class Php85DebugCommandTest extends AbstractKernelTestCase
 {
     private string|false $colSize;
@@ -54,8 +52,8 @@ final class Php85DebugCommandTest extends AbstractKernelTestCase
 
         $expectedClosure = <<<'PHP'
             Condition      static function (Plant $plant): bool {
-                                         return 0 === $plant->getWaterLevel();
-                                     }
+                                 return 0 === $plant->getWaterLevel();
+                             }
             PHP;
 
         self::assertStringContainsString(

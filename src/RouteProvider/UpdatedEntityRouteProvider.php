@@ -82,8 +82,8 @@ final class UpdatedEntityRouteProvider extends AbstractEntityRouteProvider
     /**
      * If possible, compute the old values for the route params.
      *
-     * @param array<string, array{mixed, mixed}>                        $entityChangeSet
-     * @param array{type: string, values: list<mixed>, optional?: true} $config
+     * @param array<string, array{mixed, mixed}|PersistentCollection<array-key, object>> $entityChangeSet
+     * @param array{type: string, values: list<mixed>, optional?: true}                  $config
      *
      * @return list<?scalar>
      */
@@ -120,6 +120,11 @@ final class UpdatedEntityRouteProvider extends AbstractEntityRouteProvider
 
             // Association check
             $head = $propertyPath->getElement(0);
+
+            // a dereferenced to-many association holds the old collection instead of an [old, new] pair
+            if (($entityChangeSet[$head] ?? null) instanceof PersistentCollection) {
+                continue;
+            }
 
             if (!isset($entityChangeSet[$head][0])) {
                 continue;
